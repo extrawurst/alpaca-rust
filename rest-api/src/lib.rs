@@ -147,4 +147,14 @@ mod tests {
 
         assert_eq!(get_endpoint_attr(a), None);
     }
+    #[test]
+    fn test_endpoint_some() {
+        let a: syn::TraitItemMethod = syn::parse2(quote! {
+            #[endpoint("foo")]
+            fn foo() {}
+        })
+        .unwrap();
+
+        assert_eq!(get_endpoint_attr(a), Some("foo".to_owned()));
+    }
 }

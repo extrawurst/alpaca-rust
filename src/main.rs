@@ -4,9 +4,18 @@ use std::env;
 //TODO: #[api_root("base_url")]
 #[api]
 trait AlpacaApi {
+    /// see https://docs.alpaca.markets/api-documentation/api-v2/account/
     #[endpoint("account")]
     fn get_account(&self) -> Result<serde_json::Value, Box<dyn std::error::Error>>;
-    fn account(&self) -> Result<serde_json::Value, Box<dyn std::error::Error>>;
+
+    /// see https://docs.alpaca.markets/api-documentation/api-v2/account-activities/
+    #[endpoint("account/activities/FILL")]
+    fn account_activities(
+        &self, //activity_type: String,
+    ) -> Result<serde_json::Value, Box<dyn std::error::Error>>;
+
+    /// see https://docs.alpaca.markets/api-documentation/api-v2/clock/
+    fn clock(&self) -> Result<serde_json::Value, Box<dyn std::error::Error>>;
 }
 
 fn main() {
@@ -30,5 +39,11 @@ fn main() {
 
     println!("{:#?}", acc);
 
-    assert_eq!(acc, api.account().unwrap());
+    let act = api.account_activities().unwrap();
+
+    println!("{:#?}", act);
+
+    let clc = api.clock().unwrap();
+
+    println!("{:#?}", clc);
 }
