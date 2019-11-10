@@ -65,7 +65,7 @@ fn get_impl_item(trait_item: syn::TraitItem) -> syn::ImplItemMethod {
 fn get_impl_method(trait_item: syn::TraitItemMethod) -> syn::ImplItemMethod {
     let name = trait_item.clone().sig.ident;
     // find the endpoint attribute defining the url postfix to use
-    let endpoint_name = match get_endpoint_name(trait_item) {
+    let endpoint_name = match get_endpoint_attr(trait_item) {
         Some(s) => s,
         None => name.to_string().clone(),
     };
@@ -84,7 +84,7 @@ fn get_impl_method(trait_item: syn::TraitItemMethod) -> syn::ImplItemMethod {
     .unwrap()
 }
 
-fn get_endpoint_name(trait_item: syn::TraitItemMethod) -> Option<String> {
+fn get_endpoint_attr(trait_item: syn::TraitItemMethod) -> Option<String> {
     trait_item
         .attrs
         .into_iter()
@@ -113,4 +113,38 @@ pub fn endpoint(_attr: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn keep(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_endpoint_none() {
+        let a: syn::TraitItemMethod = syn::parse2(quote! {
+            fn foo() {}
+        })
+        .unwrap();
+
+        assert_eq!(get_endpoint_attr(a), None);
+    }
+    #[test]
+    fn test_endpoint_some() {
+        let a: syn::TraitItemMethod = syn::parse2(quote! {
+            #[endpoint("foo")]
+            fn foo() {}
+        })
+        .unwrap();
+
+        assert_eq!(get_endpoint_attr(a), Some("foo".to_owned()));
+    }
+    #[test]
+    fn test_endpoint_none2() {
+        let a: syn::TraitItemMethod = syn::parse2(quote! {
+            #[keep]
+            fn foo() {}
+        })
+        .unwrap();
+
+        assert_eq!(get_endpoint_attr(a), None);
+    }
 }
