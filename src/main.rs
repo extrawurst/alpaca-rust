@@ -6,6 +6,7 @@ use std::env;
 trait AlpacaApi {
     #[endpoint("account")]
     fn get_account(&self) -> Result<serde_json::Value, Box<dyn std::error::Error>>;
+    fn account(&self) -> Result<serde_json::Value, Box<dyn std::error::Error>>;
 }
 
 fn main() {
@@ -28,4 +29,6 @@ fn main() {
     let acc = api.get_account().unwrap();
 
     println!("{:#?}", acc);
+
+    assert_eq!(acc, api.account().unwrap());
 }
