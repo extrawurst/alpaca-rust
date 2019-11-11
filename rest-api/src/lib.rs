@@ -65,15 +65,32 @@ fn get_impl_item(trait_item: syn::TraitItem) -> syn::ImplItemMethod {
 fn get_impl_method(trait_item: syn::TraitItemMethod) -> syn::ImplItemMethod {
     let name = trait_item.clone().sig.ident;
     // find the endpoint attribute defining the url postfix to use
-    let endpoint_name = match get_endpoint_attr(trait_item) {
+    let endpoint_name = match get_endpoint_attr(trait_item.clone()) {
         Some(s) => s,
         None => name.to_string().clone(),
     };
 
+    let args: Vec<syn::Ident> = trait_item
+        .clone()
+        .sig
+        .inputs
+        .into_iter()
+        .filter_map(|a| match a {
+            syn::FnArg::Typed(arg) => Some(*arg.pat),
+            _ => None,
+        })
+        .filter_map(|pat| match pat {
+            syn::Pat::Ident(ident) => Some(ident.ident),
+            _ => None,
+        })
+        .collect();
+
+    let path: syn::Expr = syn::parse2(quote! {&format!(#endpoint_name, #(#args),*)}).unwrap();
+
     // build the method
-    syn::parse2(quote! {
+    let mut method_impl: syn::ImplItemMethod = syn::parse2(quote! {
         fn #name(&self) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
-            let url = self.base_url.clone() + #endpoint_name;
+            let url = self.base_url.clone() + #path;
             let mut builder = reqwest::Client::new().get(url.as_str());
             builder = self.add_headers(builder);
             let json: serde_json::Value = builder.send()?.json()?;
@@ -81,7 +98,11 @@ fn get_impl_method(trait_item: syn::TraitItemMethod) -> syn::ImplItemMethod {
             Ok(json)
         }
     })
-    .unwrap()
+    .unwrap();
+
+    method_impl.sig = trait_item.clone().sig;
+
+    method_impl
 }
 
 fn get_endpoint_attr(trait_item: syn::TraitItemMethod) -> Option<String> {

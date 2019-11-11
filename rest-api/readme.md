@@ -15,9 +15,9 @@ Support as many flavours and special cases out there in different Rest APIs with
 ## todo
 
 - [x] proof of concept
+- [x] support url parameters
 - [ ] string results
 - [ ] define base url in attribute
-- [ ] support url parameters
 - [ ] support query parameters
 - [ ] support post using json
 - [ ] allow serializable types in api
