@@ -2,10 +2,11 @@ use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::export::TokenStream;
 use syn::Meta;
+use syn::visit_mut::{self,VisitMut};
 
 #[proc_macro_attribute]
 pub fn api(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let input = syn::parse_macro_input!(item as syn::ItemTrait);
+    let mut input = syn::parse_macro_input!(item as syn::ItemTrait);
     let name = &input.ident;
 
     let struct_name = Ident::new(&format!("{}RestClient", name), Span::call_site());
@@ -43,6 +44,9 @@ pub fn api(_attr: TokenStream, item: TokenStream) -> TokenStream {
         .into_iter()
         .map(|a| syn::ImplItem::from(get_impl_item(a)))
         .collect();
+
+    // remove all method param attributes
+    FnSigAttrRemove.visit_item_trait_mut(&mut input);
 
     // outputting it all
     let result = quote! {
@@ -102,6 +106,9 @@ fn get_impl_method(trait_item: syn::TraitItemMethod) -> syn::ImplItemMethod {
 
     method_impl.sig = trait_item.clone().sig;
 
+    // remove all method param attributes
+    FnSigAttrRemove.visit_signature_mut(&mut method_impl.sig);
+
     method_impl
 }
 
@@ -124,6 +131,23 @@ fn get_endpoint_attr(trait_item: syn::TraitItemMethod) -> Option<String> {
             _ => None,
         })
         .next()
+}
+
+struct FnSigAttrRemove;
+impl VisitMut for FnSigAttrRemove {
+    fn visit_fn_arg_mut(&mut self, node: &mut syn::FnArg) {
+        match node {
+            syn::FnArg::Receiver(arg) => {
+                arg.attrs.clear();
+            }
+            syn::FnArg::Typed(arg) => {
+                arg.attrs.clear();
+            }
+        }
+
+        // Delegate to the default impl to visit nested nodes
+        visit_mut::visit_fn_arg_mut(self, node);
+    }
 }
 
 #[proc_macro_attribute]
