@@ -14,6 +14,9 @@ trait AlpacaApi {
         &self,
         activity_type: &str,
     ) -> Result<serde_json::Value, Box<dyn std::error::Error>>;
+    /// see https://docs.alpaca.markets/api-documentation/api-v2/account-activities/
+    #[endpoint("account/activities")]
+    fn account_activities_all(&self) -> Result<serde_json::Value, Box<dyn std::error::Error>>;
 
     /// see https://docs.alpaca.markets/api-documentation/api-v2/clock/
     fn clock(&self) -> Result<serde_json::Value, Box<dyn std::error::Error>>;
@@ -39,8 +42,11 @@ fn main() {
     let acc = api.get_account().unwrap();
     println!("account:\n{:#?}\n", acc);
 
-    let act = api.account_activities("FILL").unwrap();
-    println!("activities:\n{:#?}\n", act);
+    let act = api.account_activities("MISC").unwrap();
+    println!("activities 'MISC':\n{:#?}\n", act);
+
+    let act_all = api.account_activities_all().unwrap();
+    println!("activities all:\n{:#?}\n", act_all);
 
     let clc = api.clock().unwrap();
     println!("clock:\n{:#?}\n", clc);
